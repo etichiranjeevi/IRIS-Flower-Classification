@@ -5,7 +5,7 @@ pipeline {
         stage('Deploy to EC2') {
             steps {
                 sh '''
-                ssh -o StrictHostKeyChecking=no ubuntu@54.242.46.36"
+                ssh -o StrictHostKeyChecking=no ubuntu@54.242.46.36
                   set -e
 
                   # Ensure app folder exists
