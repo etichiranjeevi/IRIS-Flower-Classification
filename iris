@@ -1,33 +1,39 @@
 pipeline {
-  agent any
+    agent any
 
-  stages {
-    stage('Deploy to EC2') {
-      steps {
-        sh '''
-          ssh -o StrictHostKeyChecking=no ec2-user@<EC2_PUBLIC_IP> << 'ENDSSH'
-            mkdir -p ~/iris-app
-            cd ~/iris-app
+    stages {
+        stage('Deploy to EC2') {
+            steps {
+                sh '''
+                ssh -o StrictHostKeyChecking=no ubuntu@54.242.46.36 "
+                  # Ensure app folder exists
+                  mkdir -p ~/iris-app && cd ~/iris-app &&
 
-            if [ -d ".git" ]; then
-              git pull origin master
-            else
-              git clone https://github.com/etichiranjeevi/IRIS-Flower-Classification.git .
-            fi
+                  # Clone repo if not already cloned, else pull latest
+                  if [ -d .git ]; then
+                    git pull origin master
+                  else
+                    git clone https://github.com/https://github.com/etichiranjeevi/IRIS-Flower-Classification.git/IRIS-Flower-Classification.git .
+                  fi &&
 
-            if [ ! -d "venv" ]; then
-              python3 -m venv venv
-            fi
-            source venv/bin/activate
+                  # Setup virtual environment if missing
+                  if [ ! -d venv ]; then
+                    python3 -m venv venv
+                  fi &&
 
-            pip install --upgrade pip
-            pip install -r requirements.txt
+                  # Activate venv and install dependencies
+                  source venv/bin/activate && \
+                  pip install --upgrade pip && \
+                  pip install -r requirements.txt && \
 
-            pkill -f "python app.py" || true
-            nohup python app.py > app.log 2>&1 &
-          ENDSSH
-        '''
-      }
+                  # Kill old app if running
+                  pkill -f \\"python app.py\\" || true && \
+
+                  # Restart Flask app in background
+                  nohup python app.py > app.log 2>&1 &
+                "
+                '''
+            }
+        }
     }
-  }
 }
