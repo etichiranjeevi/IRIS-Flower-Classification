@@ -5,42 +5,44 @@ pipeline {
         stage('Deploy to EC2') {
             steps {
                 sh '''
-                ssh -o StrictHostKeyChecking=no ubuntu@54.242.46.36
+                ssh -o StrictHostKeyChecking=no ubuntu@52.73.131.166 "
                   set -e
 
-                  # Ensure app folder exists
+                  echo '--- Updating system packages ---'
+                  sudo apt update -y || true
+                  sudo apt install -y python3 python3-pip python3-venv git
+
+                  echo '--- Preparing app folder ---'
                   mkdir -p ~/iris-app
                   cd ~/iris-app
 
-                  # If already a git repo, just pull; else clean and clone fresh
                   if [ -d .git ]; then
                     echo 'Updating existing repo...'
                     git reset --hard
-                    git pull origin main
+                    git pull origin main || git pull origin master
                   else
                     echo 'Cloning fresh repo...'
                     rm -rf ~/iris-app/*
-                    git clone -b main https://github.com/etichiranjeevi/IRIS-Flower-Classification.git .
+                    git clone https://github.com/etichiranjeevi/IRIS-Flower-Classification.git .
                   fi
 
-                  # Setup virtual environment if missing
-                  if [ ! -d venv ]; then
-                    python3 -m venv venv
-                  fi
-
-                  # Activate venv and install dependencies
+                  echo '--- Creating virtual environment ---'
+                  rm -rf venv
+                  python3 -m venv venv
                   source venv/bin/activate
+
+                  echo '--- Installing dependencies ---'
                   pip install --upgrade pip
                   pip install -r requirements.txt
 
-                  # Kill old app if running
+                  echo '--- Stopping old Flask app if running ---'
                   pkill -f \\"python app.py\\" || true
 
-                  # Restart Flask app in background safely
+                  echo '--- Starting Flask app in background ---'
                   nohup python app.py > app.log 2>&1 &
                   sleep 2
 
-                  # Ensure SSH exits cleanly (prevents exit code 255 in Jenkins)
+                  echo 'Deployment finished successfully!'
                   exit 0
                 "
                 '''
@@ -48,5 +50,6 @@ pipeline {
         }
     }
 }
+
 
 
