@@ -5,29 +5,36 @@ pipeline {
         stage('Deploy to EC2') {
             steps {
                 sh '''
-                ssh -o StrictHostKeyChecking=no ubuntu@54.242.46.36 "
-                  # Ensure app folder exists
-                  mkdir -p ~/iris-app && cd ~/iris-app &&
+                ssh -o StrictHostKeyChecking=no ec2-user@<EC2_IP> "
+                  set -e
 
-                  # Clone repo if not already cloned, else pull latest
+                  # Ensure app folder exists
+                  mkdir -p ~/iris-app
+                  cd ~/iris-app
+
+                  # If already a git repo, just pull; else clean and clone fresh
                   if [ -d .git ]; then
+                    echo 'Updating existing repo...'
+                    git reset --hard
                     git pull origin master
                   else
-                    git clone https://github.com/etichiranjeevi/IRIS-Flower-Classification.git/IRIS-Flower-Classification.git .
-                  fi &&
+                    echo 'Cloning fresh repo...'
+                    rm -rf ~/iris-app/*
+                    git clone https://github.com/etichiranjeevi/IRIS-Flower-Classification.git .
+                  fi
 
                   # Setup virtual environment if missing
                   if [ ! -d venv ]; then
                     python3 -m venv venv
-                  fi &&
+                  fi
 
                   # Activate venv and install dependencies
-                  source venv/bin/activate && \
-                  pip install --upgrade pip && \
-                  pip install -r requirements.txt && \
+                  source venv/bin/activate
+                  pip install --upgrade pip
+                  pip install -r requirements.txt
 
                   # Kill old app if running
-                  pkill -f \\"python app.py\\" || true && \
+                  pkill -f \\"python app.py\\" || true
 
                   # Restart Flask app in background
                   nohup python app.py > app.log 2>&1 &
@@ -37,3 +44,4 @@ pipeline {
         }
     }
 }
+
