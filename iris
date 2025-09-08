@@ -13,7 +13,7 @@ pipeline {
                   if [ -d .git ]; then
                     git pull origin master
                   else
-                    git clone https://github.com/https://github.com/etichiranjeevi/IRIS-Flower-Classification.git/IRIS-Flower-Classification.git .
+                    git clone https://github.com/etichiranjeevi/IRIS-Flower-Classification.git/IRIS-Flower-Classification.git .
                   fi &&
 
                   # Setup virtual environment if missing
