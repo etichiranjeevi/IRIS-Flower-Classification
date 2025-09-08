@@ -16,7 +16,7 @@ pipeline {
                   if [ -d .git ]; then
                     echo 'Updating existing repo...'
                     git reset --hard
-                    git pull origin master
+                    git pull origin main
                   else
                     echo 'Cloning fresh repo...'
                     rm -rf ~/iris-app/*
