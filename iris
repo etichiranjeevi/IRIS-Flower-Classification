@@ -45,9 +45,7 @@ pipeline {
                   ps -ef | grep python || true
 
                   echo '--- Debug: check port 5000 ---'
-                  set +e
-                  ss -tulnp | grep 5000
-                  set -e
+                  (ss -tulnp | grep 5000) || echo "Port 5000 not visible in ss output (might need net-tools)"
 
                   echo '--- End of script reached ---'
                   exit 0
