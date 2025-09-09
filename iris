@@ -4,7 +4,6 @@ pipeline {
     stages {
         stage('Deploy to EC2') {
             steps {
-                // Run SSH commands on your EC2 instance
                 sh '''
                 ssh -o StrictHostKeyChecking=no ubuntu@54.209.94.204 << 'EOF'
                   set -e
@@ -46,7 +45,11 @@ pipeline {
                   ps -ef | grep python || true
 
                   echo '--- Debug: check port 5000 ---'
-                  (command -v ss && ss -tulnp | grep 5000) || echo "ss/netstat not available"
+                  if ss -tulnp | grep 5000; then
+                    echo "✅ Port 5000 is active"
+                  else
+                    echo "⚠️ Flask may be running only on localhost, not exposed externally"
+                  fi
 
                   echo '--- End of script reached ---'
                   exit 0
@@ -56,5 +59,6 @@ EOF
         }
     }
 }
+
 
 
