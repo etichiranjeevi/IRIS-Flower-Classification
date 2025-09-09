@@ -1,48 +1,60 @@
-sh '''
-ssh -o StrictHostKeyChecking=no ubuntu@54.209.94.204 << 'EOF'
-  set -e
+pipeline {
+    agent any
 
-  echo '--- Updating system packages ---'
-  sudo apt update -y || true
-  sudo DEBIAN_FRONTEND=noninteractive apt install -y python3 python3-pip python3-venv git
+    stages {
+        stage('Deploy to EC2') {
+            steps {
+                // Run SSH commands on your EC2 instance
+                sh '''
+                ssh -o StrictHostKeyChecking=no ubuntu@54.209.94.204 << 'EOF'
+                  set -e
 
-  echo '--- Preparing app folder ---'
-  mkdir -p ~/iris-app
-  cd ~/iris-app
+                  echo '--- Updating system packages ---'
+                  sudo apt update -y || true
+                  sudo DEBIAN_FRONTEND=noninteractive apt install -y python3 python3-pip python3-venv git
 
-  if [ -d .git ]; then
-    echo 'Updating existing repo...'
-    git reset --hard || true
-    git pull origin main || git pull origin master
-  else
-    echo 'Cloning fresh repo...'
-    rm -rf ~/iris-app/*
-    git clone https://github.com/etichiranjeevi/IRIS-Flower-Classification.git .
-  fi
+                  echo '--- Preparing app folder ---'
+                  mkdir -p ~/iris-app
+                  cd ~/iris-app
 
-  echo '--- Creating virtual environment ---'
-  rm -rf venv || true
-  python3 -m venv venv
-  source venv/bin/activate
+                  if [ -d .git ]; then
+                    echo 'Updating existing repo...'
+                    git reset --hard || true
+                    git pull origin main || git pull origin master
+                  else
+                    echo 'Cloning fresh repo...'
+                    rm -rf ~/iris-app/*
+                    git clone https://github.com/etichiranjeevi/IRIS-Flower-Classification.git .
+                  fi
 
-  echo '--- Installing dependencies ---'
-  pip install --upgrade pip
-  pip install -r requirements.txt
+                  echo '--- Creating virtual environment ---'
+                  rm -rf venv || true
+                  python3 -m venv venv
+                  source venv/bin/activate
 
-  echo '--- Stopping old Flask app if running ---'
-  pkill -f "python app.py" || echo "No old Flask process running"
+                  echo '--- Installing dependencies ---'
+                  pip install --upgrade pip
+                  pip install -r requirements.txt
 
-  echo '--- Starting Flask app in background ---'
-  nohup python app.py > app.log 2>&1 &
+                  echo '--- Stopping old Flask app if running ---'
+                  pkill -f "python app.py" || echo "No old Flask process running"
 
-  echo '--- Debug: list running python processes ---'
-  ps -ef | grep python || true
+                  echo '--- Starting Flask app in background ---'
+                  nohup python app.py > app.log 2>&1 &
 
-  echo '--- Debug: check port 5000 ---'
-  (command -v ss && ss -tulnp | grep 5000) || echo 'ss/netstat not available'
+                  echo '--- Debug: list running python processes ---'
+                  ps -ef | grep python || true
 
-  echo '--- End of script reached ---'
-  exit 0
+                  echo '--- Debug: check port 5000 ---'
+                  (command -v ss && ss -tulnp | grep 5000) || echo "ss/netstat not available"
+
+                  echo '--- End of script reached ---'
+                  exit 0
 EOF
-'''
+                '''
+            }
+        }
+    }
+}
+
 
