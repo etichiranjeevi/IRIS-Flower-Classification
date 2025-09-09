@@ -44,8 +44,12 @@ pipeline {
                   echo '--- Debug: list running python processes ---'
                   ps -ef | grep python || true
 
-                  echo '--- Debug: check port 5000 ---'
-                  (ss -tulnp | grep 5000) || echo "Port 5000 not visible in ss output (might need net-tools)"
+                 echo '--- Debug: check port 5000 ---'
+                which ss >/dev/null 2>&1 || sudo apt-get install -y iproute2 || true
+                which netstat >/dev/null 2>&1 || sudo apt-get install -y net-tools || true
+
+                (ss -tulnp | grep 5000) || (netstat -tulnp | grep 5000) || echo "Port 5000 not visible in checks"
+
 
                   echo '--- End of script reached ---'
                   exit 0
