@@ -5,12 +5,12 @@ pipeline {
         stage('Deploy to EC2') {
             steps {
                 sh '''
-                ssh -o StrictHostKeyChecking=no ubuntu@54.209.94.204 << 'EOF'
+                ssh -o StrictHostKeyChecking=no ubuntu@54.209.94.204 "
                   set -e
 
                   echo '--- Updating system packages ---'
                   sudo apt update -y || true
-                  sudo DEBIAN_FRONTEND=noninteractive apt install -y python3 python3-pip python3-venv git
+                  sudo DEBIAN_FRONTEND=noninteractive apt install -y python3 python3-pip python3-venv git curl net-tools
 
                   echo '--- Preparing app folder ---'
                   mkdir -p ~/iris-app
@@ -36,24 +36,25 @@ pipeline {
                   pip install -r requirements.txt
 
                   echo '--- Stopping old Flask app if running ---'
-                  pkill -f "python app.py" || echo "No old Flask process running"
+                  pkill -f \\"python app.py\\" || true
 
-                  echo '--- Starting Flask app in background (0.0.0.0:5000) ---'
+                  echo '--- Starting Flask app on 0.0.0.0:5000 ---'
                   nohup python app.py --host=0.0.0.0 --port=5000 > app.log 2>&1 &
+
+                  sleep 3
 
                   echo '--- Debug: list running python processes ---'
                   ps -ef | grep python || true
 
-                 echo '--- Debug: check port 5000 ---'
-                which ss >/dev/null 2>&1 || sudo apt-get install -y iproute2 || true
-                which netstat >/dev/null 2>&1 || sudo apt-get install -y net-tools || true
+                  echo '--- Debug: check port 5000 ---'
+                  (netstat -tulnp | grep 5000) || echo 'Port 5000 not visible'
 
-                (ss -tulnp | grep 5000) || (netstat -tulnp | grep 5000) || echo "Port 5000 not visible in checks"
-
+                  echo '--- Health check (local curl) ---'
+                  curl -s http://127.0.0.1:5000/ || echo 'Flask did not respond'
 
                   echo '--- End of script reached ---'
                   exit 0
-EOF
+                "
                 '''
             }
         }
